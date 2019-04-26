@@ -1,19 +1,26 @@
 {-# LANGUAGE DeriveFunctor #-}
+{-# LANGUAGE DataKinds     #-}
+{-# LANGUAGE TypeOperators #-}
+{-# LANGUAGE FlexibleContexts #-}
 
 module Effs where
 
 import FreerT
+import Data.Sum
 
 -- A library of basic effects
 
-data Basic e s r = Get (s -> r) | Put s r | Fail e
+data State s r = Get (s -> r) | Put s r
   deriving Functor
 
-get :: FreerT (Basic e s) m s
-get = liftF $ Get id
+get :: (Apply Functor r, State s :< r) => FreerT (Sum r) m s
+get = liftF . inject $ Get id
 
-put :: s -> FreerT (Basic e s) m ()
-put s = liftF $ Put s ()
+put :: (Apply Functor r, State s :< r) => s -> FreerT (Sum r) m ()
+put s = liftF . inject $ Put s ()
 
-fail :: e -> FreerT (Basic e s) m x
-fail e = liftF $ Fail e
+data Except e r = Fail e
+  deriving Functor
+
+fail :: (Apply Functor r, Except e :< r) => e -> FreerT (Sum r) m ()
+fail e = liftF . inject $ Fail e

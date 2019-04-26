@@ -2,6 +2,7 @@
 {-# LANGUAGE RankNTypes                #-}
 {-# LANGUAGE LambdaCase                #-}
 {-# LANGUAGE DeriveFunctor             #-}
+{-# LANGUAGE StandaloneDeriving        #-}
 
 module FreerT where
 
@@ -12,9 +13,7 @@ import Control.Monad (ap)
 
 data FreerInput f r a = Done a | forall x. More (f x) (x -> r)
 
-instance Functor (FreerInput f r) where
-  fmap f (Done a)   = Done (f a)
-  fmap _ (More x y) = More x y
+deriving instance Functor (FreerInput f r)
 
 instance Applicative (FreerInput f r) where
   pure = Done

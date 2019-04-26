@@ -1,7 +1,12 @@
 {-# LANGUAGE LambdaCase    #-}
 {-# LANGUAGE DeriveFunctor #-}
+{-# LANGUAGE DataKinds     #-}
+{-# LANGUAGE TypeOperators #-}
+{-# LANGUAGE FlexibleContexts #-}
 
 module Main where
+
+import Data.Sum
 
 import qualified Control.Monad.State as MS
 import qualified Control.Monad.Except as ME
@@ -14,7 +19,7 @@ import Effs
 blacklist :: [String]
 blacklist = ["berthold"]
 
-bouncer :: FreerT (Basic String String) m ()
+bouncer :: (Apply Functor r, '[State String, Except String] :<: r) => FreerT (Sum r) m ()
 bouncer = do
   v <- get
   if v `elem` blacklist
@@ -23,11 +28,12 @@ bouncer = do
 
 -- For convenience, we interpret everything into mtl monads
 
-interpret :: (MS.MonadState s m, ME.MonadError e m) => FreerT (Basic e s) m a -> m a
-interpret = iterT $ \case
-  Get f   -> MS.get >>= f
-  Put s r -> MS.put s >> r
-  Fail e  -> ME.throwError e
+interpret :: (Apply Functor r, '[State String, Except String] :<: r, MS.MonadState s m, ME.MonadError e m) => FreerT (Sum r) m a -> m a
+interpret = iterT $ _ 
+-- \case
+--   Get f   -> MS.get >>= f
+--   Put s r -> MS.put s >> r
+--   Fail e  -> ME.throwError e
 
 -- Go, go, go!
 
